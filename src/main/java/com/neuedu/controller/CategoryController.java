@@ -59,6 +59,24 @@ public class CategoryController {
 
         return "categoryupdate";
     }
+    @RequestMapping(value = "delete/{id}")
+    public String delet(@PathVariable("id") Integer categoryId)
+    {
+        int result = categoryService.deleteByPrimaryKey(categoryId);
+        return "redirect:/user/category/find";
+    }
+    @RequestMapping(value = "insert",method = RequestMethod.GET)
+    public String insert()
+    {
+        return "categoryinsert";
+    }
+    @RequestMapping(value = "insert",method = RequestMethod.POST)
+    public String insert(Category category,HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
+        request.setCharacterEncoding("UTF-8");
+        response.setContentType("text/html;charset=UTF-8");
 
-
+        System.out.println(category.getName());
+        categoryService.insert(category);
+        return "redirect:/user/category/find";
+    }
 }

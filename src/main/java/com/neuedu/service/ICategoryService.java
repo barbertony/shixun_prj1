@@ -31,4 +31,6 @@ public interface ICategoryService {
      * */
 
     public Category findCategoryById(int categoryId);
+    int deleteByPrimaryKey(Integer id);
+    int insert(Category record);
 }
