@@ -2,6 +2,8 @@ package com.neuedu.dao;
 
 import com.neuedu.pojo.Product;
 import com.neuedu.pojo.Product;
+import org.apache.ibatis.annotations.Param;
+
 import java.util.List;
 
 public interface ProductMapper {
@@ -43,5 +45,5 @@ public interface ProductMapper {
      *
      * @mbggenerated
      */
-    int updateByPrimaryKey(Product record);
+    int updateByPrimaryKey(@Param("product") Product record);
 }

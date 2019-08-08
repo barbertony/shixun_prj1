@@ -16,6 +16,7 @@
 <body>
 <a href="/user/find">管理用户</a>
 <a href="/user/category/find">管理类别</a>
+<a href="/user/product/find">管理商品</a>
 <h1>welcome ${user.username}</h1>
 </body>
 </html>
