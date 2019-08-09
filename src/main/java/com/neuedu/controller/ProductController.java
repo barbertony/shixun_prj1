@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.mail.Multipart;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -33,7 +34,7 @@ public class ProductController {
     {
         List<Product> productList=productService.selectAll();
         session.setAttribute("productlist",productList);
-        return "productlist";
+        return "product/list";
     }
     @RequestMapping(value = "update/{id}",method = RequestMethod.GET)
     public String update(@PathVariable("id") Integer productId, HttpServletRequest request)
@@ -43,43 +44,100 @@ public class ProductController {
         List<Product> productList=(List<Product>) session.getAttribute("productlist");
         for (int i = 0; i <productList.size() ; i++) {
             int j=productList.get(i).getId();
+            String newSubImages=new String();
             if (j==productId)
             {
                 session.setAttribute("updateProduct",productList.get(i));
-                return "productupdate";
+                newSubImages=productList.get(i).getSubImages().substring(5);
+                System.out.println(newSubImages);
+                List<String> newSubImageslist= productService.subImages(newSubImages);
+
+                request.getSession().setAttribute("newSubImageslist",newSubImageslist);
+                return "product/index";
             }
+
         }
 
         return "productupdate";
     }
     @RequestMapping(value = "update/{id}",method = RequestMethod.POST)
-    public String update(Product updateProduct ,@RequestParam("pic") MultipartFile uploadFile,HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
+    public String update(Product updateProduct ,@RequestParam("mainpicture")MultipartFile mainpicture, @RequestParam("picture1")MultipartFile[] files,HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException
     {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=UTF-8");
         System.out.println(updateProduct.getId());
         System.out.println(updateProduct.getName());
-        System.out.println(uploadFile.getOriginalFilename());
-        if (uploadFile!=null&&!uploadFile.getOriginalFilename().equals("")&&uploadFile.getOriginalFilename()!=null)
+
+
+
+
+        if (mainpicture!=null&&!mainpicture.isEmpty())
         {
-            System.out.println("11111");
             String uuid= UUID.randomUUID().toString();
-            String fileName=uploadFile.getOriginalFilename();
+            String fileName=mainpicture.getOriginalFilename();
             String fileextendname=fileName.substring(fileName.lastIndexOf("."));
             String newFileName=uuid+fileextendname;
-
             File file=new File("D:\\upload");
             File newFile=new File(file,newFileName);
             try {
-                uploadFile.transferTo(newFile);
+                mainpicture.transferTo(newFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
             updateProduct.setMainImage(newFileName);
+
         }
+
+
+
+
+
+        List<String> strs =(List<String>) request.getSession().getAttribute("newSubImageslist");
+        String str="00000";
+        for (int i = 0; i <strs.size() ; i++) {
+            if (!strs.get(i).equals("")&&strs.get(i)!=null) {
+                str = str + strs.get(i);
+                str = str + ",";
+            }
+        }
+        System.out.println(files.length);
+        if (files!=null&&!files[0].isEmpty())
+        {
+            for(MultipartFile uploadFile:files)
+            {
+                String uuid= UUID.randomUUID().toString();
+                String fileName=uploadFile.getOriginalFilename();
+                String fileextendname=fileName.substring(fileName.lastIndexOf("."));
+                String newFileName=uuid+fileextendname;
+                File file=new File("D:\\upload");
+                File newFile=new File(file,newFileName);
+                try {
+                    uploadFile.transferTo(newFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                str=str+newFileName+",";
+            }
+//            System.out.println("11111");
+//            String uuid= UUID.randomUUID().toString();
+//            String fileName=uploadFile.getOriginalFilename();
+//            String fileextendname=fileName.substring(fileName.lastIndexOf("."));
+//            String newFileName=uuid+fileextendname;
+//
+//            File file=new File("D:\\upload");
+//            File newFile=new File(file,newFileName);
+//            try {
+//                uploadFile.transferTo(newFile);
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+        }
+        updateProduct.setSubImages(str.substring(0,str.length()-1));
         int result=productService.updateByPrimaryKey(updateProduct);
         if(result>0){
             //修改成功
+            request.getSession().removeAttribute("updateProduct");
+            request.getSession().removeAttribute("newSubImageslist");
             return "redirect:/user/product/find";
         }
 
@@ -97,38 +155,57 @@ public class ProductController {
     {
         List<Category> categoryList=categoryService.findAll();
         request.getSession().setAttribute("categorylist",categoryList);
-        return "productinsert";
+        request.getSession().removeAttribute("updateProduct");
+        request.getSession().removeAttribute("newSubImageslist");
+        return "product/index";
     }
     @RequestMapping(value = "insert",method = RequestMethod.POST)
-    public String insert(Product product, @RequestParam("pic") MultipartFile uploadFile,HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
+    public String insert(Product product, @RequestParam("mainpicture")MultipartFile mainpicture, @RequestParam("picture1")MultipartFile[] files, HttpServletRequest request, HttpServletResponse response) throws UnsupportedEncodingException {
         request.setCharacterEncoding("UTF-8");
         response.setContentType("text/html;charset=UTF-8");
-
-
-
-        if (uploadFile!=null&&!uploadFile.getOriginalFilename().equals("")&&uploadFile.getOriginalFilename()!=null)
-        {
-            String uuid= UUID.randomUUID().toString();
-            String fileName=uploadFile.getOriginalFilename();
-            String fileextendname=fileName.substring(fileName.lastIndexOf("."));
-            String newFileName=uuid+fileextendname;
-
-            File file=new File("D:\\upload");
-            File newFile=new File(file,newFileName);
+        if (mainpicture != null && !mainpicture.isEmpty()) {
+            String uuid = UUID.randomUUID().toString();
+            String fileName = mainpicture.getOriginalFilename();
+            String fileextendname = fileName.substring(fileName.lastIndexOf("."));
+            String newFileName = uuid + fileextendname;
+            File file = new File("D:\\upload");
+            File newFile = new File(file, newFileName);
             try {
-                uploadFile.transferTo(newFile);
+                mainpicture.transferTo(newFile);
             } catch (IOException e) {
                 e.printStackTrace();
             }
             product.setMainImage(newFileName);
+
         }
-        product.setSubImages("00000");
-        int result=productService.insert(product);
-        if (result>0) {
+
+        String str = "00000";
+
+        System.out.println(files.length);
+        if (files != null && !files[0].isEmpty()) {
+            for (MultipartFile uploadFile : files) {
+                String uuid = UUID.randomUUID().toString();
+                String fileName = uploadFile.getOriginalFilename();
+                String fileextendname = fileName.substring(fileName.lastIndexOf("."));
+                String newFileName = uuid + fileextendname;
+                File file = new File("D:\\upload");
+                File newFile = new File(file, newFileName);
+                try {
+                    uploadFile.transferTo(newFile);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                str = str + newFileName + ",";
+            }
+        }
+        product.setSubImages(str.substring(0,str.length()-1));
+        int result = productService.insert(product);
+        if (result > 0) {
             return "redirect:/user/product/find";
         }
         System.out.println("注册失败");
         return "redirect:/user/product/find";
+
     }
     @RequestMapping(value = "sub/{id}",method = RequestMethod.GET)
     public String subimagesupload(@PathVariable("id") Integer productId,HttpServletRequest request)
@@ -171,8 +248,18 @@ public class ProductController {
 
         }
         System.out.println(image);
+        String str="00000";
+        for (int i = 0; i <images.size() ; i++) {
+            if (!images.get(i).equals("")&&images.get(i)!=null) {
+                str = str + images.get(i);
+                str = str + ",";
+            }
+        }
+        product.setSubImages(str.substring(0,str.length()-1));
+        productService.updateByPrimaryKey(product);
         request.getSession().setAttribute("newSubImageslist",images);
-        return "redirect:/user/product/addimage";
+        String strd="redirect:/user/product/update/"+product.getId();
+        return strd;
     }
     @RequestMapping(value = "addimage",method = RequestMethod.GET)
     public String addimage()
